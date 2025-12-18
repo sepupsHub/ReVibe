@@ -1,0 +1,64 @@
+# ===== ENV FILES =====
+.env
+.env.*
+
+# ===== FRONTEND =====
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/dist-ssr/
+frontend/*.local
+
+# ===== BACKEND =====
+backend/venv/
+backend/__pycache__/
+backend/db.sqlite3
+backend/.env
+
+# ===== PYTHON =====
+*.pyc
+__pycache__/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE =====
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===== LOGS =====
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== PYTHON TOOLS =====
+.venv/
+.python-version
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# ===== NODE TOOLS =====
+node_modules/
+.eslintcache
+.parcel-cache
+.turbo
+.pnp.*
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
