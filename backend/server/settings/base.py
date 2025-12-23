@@ -3,7 +3,10 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-dev-key")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 
 DEBUG = False
 
@@ -19,7 +22,8 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "corsheaders",
-
+    
+    "spotify",
 ]
 
 MIDDLEWARE = [
