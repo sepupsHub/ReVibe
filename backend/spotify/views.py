@@ -1,9 +1,12 @@
 from django.conf import settings
 from django.shortcuts import redirect
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
 from .services.oauth import build_login_url, exchange_code_for_token
-from .services.tokens import save_tokens
+from .services.tokens import save_tokens, get_valid_access_token
+from .services.client import spotify_get
 
 
 class SpotifyLoginView(APIView):
@@ -32,3 +35,24 @@ class SpotifyCallbackView(APIView):
 
         save_tokens(request.session, token_data)
         return redirect("http://localhost:5173/app")
+    
+
+class SpotifyMeView(APIView):
+    def get(self, request):
+        access_token = get_valid_access_token(request.session)
+
+        if not access_token:
+            return Response(
+                {"detail": "Not authenticated with Spotify"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            profile = spotify_get(access_token, "/me")
+        except Exception:
+            return Response(
+                {"detail": "Failed to fetch Spotify profile"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(profile, status=status.HTTP_200_OK)
