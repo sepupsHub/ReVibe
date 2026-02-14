@@ -24,7 +24,7 @@ class SpotifyCallbackView(APIView):
         code = request.GET.get("code")
         
         if not code:
-            return redirect("http://localhost:5173/login?error=spotify")
+            return redirect("http://127.0.0.1:5173/login?error=spotify")
 
         token_data = exchange_code_for_token(
             code,
@@ -34,7 +34,7 @@ class SpotifyCallbackView(APIView):
         )
 
         save_tokens(request.session, token_data)
-        return redirect("http://localhost:5173/app")
+        return redirect("http://127.0.0.1:5173/app")
     
 
 class SpotifyMeView(APIView):
