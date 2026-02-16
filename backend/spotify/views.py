@@ -5,8 +5,33 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .services.oauth import build_login_url, exchange_code_for_token
-from .services.tokens import save_tokens, get_valid_access_token
-from .services.client import spotify_get
+from .services.tokens import save_tokens
+from .services.auth import (
+    SpotifyAPIError,
+    SpotifyAuthError,
+    require_access_token,
+    spotify_get_or_raise,
+)
+
+
+class SpotifyAuthAPIView(APIView):
+    def get_access_token(self, request):
+        try:
+            return require_access_token(request.session), None
+        except SpotifyAuthError as exc:
+            return None, Response(
+                {"detail": str(exc)},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+    def spotify_get(self, access_token, path):
+        try:
+            return spotify_get_or_raise(access_token, path), None
+        except SpotifyAPIError as exc:
+            return None, Response(
+                {"detail": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
 
 class SpotifyLoginView(APIView):
@@ -37,22 +62,14 @@ class SpotifyCallbackView(APIView):
         return redirect("http://127.0.0.1:5173/app")
     
 
-class SpotifyMeView(APIView):
+class SpotifyMeView(SpotifyAuthAPIView):
     def get(self, request):
-        access_token = get_valid_access_token(request.session)
+        access_token, error_response = self.get_access_token(request)
+        if error_response:
+            return error_response
 
-        if not access_token:
-            return Response(
-                {"detail": "Not authenticated with Spotify"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        try:
-            profile = spotify_get(access_token, "/me")
-        except Exception:
-            return Response(
-                {"detail": "Failed to fetch Spotify profile"},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
+        profile, error_response = self.spotify_get(access_token, "/me")
+        if error_response:
+            return error_response
 
         return Response(profile, status=status.HTTP_200_OK)
