@@ -1,15 +1,13 @@
-import requests
-
-SPOTIFY_PLAYLISTS_URL = "https://api.spotify.com/v1/me/playlists/"
+from spotify.services.auth import spotify_get_or_raise
 
 def fetch_all_playlists(access_token):
-    headers = {
-        "Authorization: Bearer " + access_token
-    }
+    playlists = spotify_get_or_raise(access_token, "/me/playlists")
     
-    response = requests.get(
-        SPOTIFY_PLAYLISTS_URL,
-        headers=headers
-    )
-    response.raise_for_status()
-    return response.json()
+    clean_playlists = []
+    for item in playlists["items"]:
+        clean_playlists.append({
+            "id": item["id"],
+            "name": item["name"]
+        })
+        
+    return clean_playlists
