@@ -41,7 +41,5 @@ def fetch_all_songs(access_token):
             song_storage_dict[song_info["id"]] = total_songs
             total_songs += 1
             
-    songs.append(total_songs)
+    # songs.append(total_songs)
     return songs
-
-    

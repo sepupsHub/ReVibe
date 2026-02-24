@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .services.fetch_playlists import fetch_all_playlists, fetch_all_songs
+from .services.detect_duplicates import detect_duplicates
 from spotify.views import SpotifyAuthAPIView
 from spotify.services.auth import SpotifyAPIError
 
@@ -31,3 +32,16 @@ class AllSongsView(SpotifyAuthAPIView):
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
         return Response(songs, status=status.HTTP_200_OK)
+    
+class PlaylistDuplicatesView(SpotifyAuthAPIView):
+    def get(self, request):
+        access_token, error_response = self.get_access_token(request)
+        if error_response:
+            return error_response
+
+        try:
+            duplicates = detect_duplicates(access_token)
+        except SpotifyAPIError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(duplicates, status=status.HTTP_200_OK)
