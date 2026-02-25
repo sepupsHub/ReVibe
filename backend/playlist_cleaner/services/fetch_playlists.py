@@ -1,4 +1,5 @@
 from spotify.services.auth import spotify_get_or_raise
+URL_OFFSET = 26
 
 def fetch_all_playlists(access_token):
     playlists = spotify_get_or_raise(access_token, "/me/playlists")
@@ -44,9 +45,37 @@ def fetch_all_songs(access_token):
                 total_songs += 1
                 
             if not new_songs["next"]: break
-            path = new_songs["next"][26:]
+            path = new_songs["next"][URL_OFFSET:]
             new_songs = spotify_get_or_raise(access_token, path, params)
             
     data["songs"] = songs
     data["total_songs"] = total_songs
+    return data
+
+def fetch_liked_songs(access_token):
+    songs = []
+    path = "/me/tracks"
+    data = dict()
+    params = {
+        "fields": "items(track(name,id)),next",
+        "limit": "50",
+    }
+    
+    new_songs = spotify_get_or_raise(access_token, path, params)
+    
+    while new_songs:
+            
+        for song in new_songs["items"]:
+            song_info = song["track"]
+            if not song_info: continue
+                
+            songs.append(song_info)
+                
+        if not new_songs["next"]: break
+        path = new_songs["next"][URL_OFFSET:]
+        new_songs = spotify_get_or_raise(access_token, path, params)
+    
+    data["songs"] = songs
+    data["total_songs"] = len(songs)
+    
     return data
