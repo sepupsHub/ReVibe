@@ -57,7 +57,7 @@ def fetch_liked_songs(access_token):
     path = "/me/tracks"
     data = dict()
     params = {
-        "fields": "items(track(name,id)),next",
+        "fields": "items(track(name,id, artists(id, name), album(images))),next",
         "limit": "50",
     }
     
