@@ -1,43 +1,33 @@
-import { useState, useEffect } from "react";
+import useMe from "@/hooks/useMe"
+import useUnaddedSongs from "@/hooks/useUnaddedSongs"
 
 function Home() {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const { user, loading, error } = useMe()
+  const {
+    unadded,
+    loading: unaddedLoading,
+    error: unaddedError,
+    fetchUnadded,
+  } = useUnaddedSongs()
 
-    useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/spotify/me/", {
-        credentials: "include",
-    })
-        .then(async (res) => {
-            console.log("STATUS:", res.status);
-            const text = await res.text();
-            console.log("BODY:", text);
+  if (loading) return <p>Loading...</p>
 
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
-            }
+  if (error) {
+    return <p>Could not load your Spotify profile.</p>
+  }
 
-            return JSON.parse(text);
-        })
-        .then((data) => {
-            setUser(data);
-        })
-        .catch((err) => {
-            console.error("FETCH ERROR:", err);
-            // window.location.href = "/";
-        })
-        .finally(() => {
-            setLoading(false);
-        });
-}, []);
+  return (
+    <div>
+      <h1>Hello {user?.display_name ?? "there"}</h1>
 
-    if (loading) return <p>Loading...</p>;
+      <button onClick={fetchUnadded} disabled={unaddedLoading}>
+        {unaddedLoading ? "Loading..." : "Unadded endpoint"}
+      </button>
 
-    return (
-        <div>
-            <h1>Hello {user.display_name}</h1>
-        </div>
-    );
-};
+      {unaddedError ? <p>Failed to load unadded songs.</p> : null}
+      {unadded ? <pre>{JSON.stringify(unadded, null, 2)}</pre> : null}
+    </div>
+  )
+}
 
-export default Home;
+export default Home
