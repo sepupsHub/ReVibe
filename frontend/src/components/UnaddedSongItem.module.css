@@ -1,0 +1,23 @@
+.songContainer {
+    background-color: hsl(0, 0%, 9%);
+    display: flex;
+}
+
+.songInfo {
+    margin-left: 0em;
+    align-self: center;
+}
+
+img {
+    padding: 16px 12px;
+    border-radius: 17px;
+}
+
+p, small {
+    color: hsl(180, 1%, 85%);
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 0.1em;
+}
