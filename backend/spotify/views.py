@@ -71,5 +71,9 @@ class SpotifyMeView(SpotifyAuthAPIView):
         profile, error_response = self.spotify_get(access_token, "/me")
         if error_response:
             return error_response
+        
+        clean_profile = {"display_name": profile["display_name"],
+                         "id": profile["id"]
+                    }
 
-        return Response(profile, status=status.HTTP_200_OK)
+        return Response(clean_profile, status=status.HTTP_200_OK)
