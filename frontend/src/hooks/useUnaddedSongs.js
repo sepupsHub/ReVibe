@@ -16,7 +16,7 @@ function useUnaddedSongs() {
       return data
     } catch (err) {
       setError(err)
-      throw err
+      return null
     } finally {
       setLoading(false)
     }
