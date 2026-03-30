@@ -1,19 +1,61 @@
+from urllib.parse import urlparse
+
 from spotify.services.auth import spotify_get_or_raise
-URL_OFFSET = 26
+
+
+def _spotify_next_to_endpoint(next_url):
+    parsed = urlparse(next_url)
+    endpoint = parsed.path
+    if endpoint.startswith("/v1"):
+        endpoint = endpoint[3:]
+    if parsed.query:
+        endpoint = f"{endpoint}?{parsed.query}"
+    return endpoint
+
+
+def _fetch_user_playlists(access_token, writable_only=False):
+    me = spotify_get_or_raise(access_token, "/me")
+    current_user_id = me.get("id")
+
+    path = "/me/playlists"
+    params = {
+        "fields": "items(id,name,owner(id),collaborative),next",
+        "limit": "50",
+    }
+
+    clean_playlists = []
+    new_playlists = spotify_get_or_raise(access_token, path, params)
+
+    while new_playlists:
+        for item in new_playlists.get("items", []):
+            owner_id = (item.get("owner") or {}).get("id")
+            collaborative = bool(item.get("collaborative"))
+
+            if writable_only and not (owner_id == current_user_id or collaborative):
+                continue
+
+            clean_playlists.append({
+                "id": item.get("id"),
+                "name": item.get("name"),
+            })
+
+        if not new_playlists.get("next"):
+            break
+
+        path = _spotify_next_to_endpoint(new_playlists["next"])
+        new_playlists = spotify_get_or_raise(access_token, path)
+
+    return {
+        "playlists": clean_playlists,
+        "total_playlists": len(clean_playlists),
+    }
+
+
+def fetch_writable_playlists(access_token):
+    return _fetch_user_playlists(access_token, writable_only=True)
 
 def fetch_all_playlists(access_token):
-    playlists = spotify_get_or_raise(access_token, "/me/playlists")
-    clean_playlists = []
-    data = dict()
-    for item in playlists["items"]:
-        clean_playlists.append({
-            "id": item["id"],
-            "name": item["name"]
-        })
-        
-    data["playlists"] = clean_playlists
-    data["total_playlists"] = len(playlists)
-    return data
+    return _fetch_user_playlists(access_token, writable_only=False)
 
 def fetch_all_songs(access_token):
     playlists = fetch_all_playlists(access_token)
@@ -26,7 +68,7 @@ def fetch_all_songs(access_token):
     total_songs = 0
     
     for playlist in playlists["playlists"]:
-        path = f"/playlists/{playlist["id"]}/items"
+        path = f"/playlists/{playlist['id']}/items"
         new_songs = spotify_get_or_raise(access_token, path, params)
         while new_songs:
             
@@ -45,7 +87,7 @@ def fetch_all_songs(access_token):
                 total_songs += 1
                 
             if not new_songs["next"]: break
-            path = new_songs["next"][URL_OFFSET:]
+            path = _spotify_next_to_endpoint(new_songs["next"])
             new_songs = spotify_get_or_raise(access_token, path, params)
             
     data["songs"] = songs
@@ -72,7 +114,7 @@ def fetch_liked_songs(access_token):
             songs.append(song_info)
                 
         if not new_songs["next"]: break
-        path = new_songs["next"][URL_OFFSET:]
+        path = _spotify_next_to_endpoint(new_songs["next"])
         new_songs = spotify_get_or_raise(access_token, path, params)
     
     data["songs"] = songs

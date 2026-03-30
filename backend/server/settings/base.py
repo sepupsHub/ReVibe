@@ -11,6 +11,8 @@ SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 SPOTIFY_SCOPES = [
     "user-read-private",
     "playlist-read-private",
+    "playlist-modify-private",
+    "playlist-modify-public",
     "user-library-read",
 ]
 

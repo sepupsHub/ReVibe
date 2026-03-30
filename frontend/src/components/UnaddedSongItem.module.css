@@ -1,23 +1,97 @@
 .songContainer {
     background-color: hsl(0, 0%, 9%);
     display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
 }
 
 .songInfo {
-    margin-left: 0em;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     align-self: center;
+    width: 100%;
 }
 
-img {
-    padding: 16px 12px;
-    border-radius: 17px;
+.songImage {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 10px;
 }
 
-p, small {
+.songTitle,
+.songArtists,
+.playlistLabel {
     color: hsl(180, 1%, 85%);
 }
 
-p {
+.songTitle {
     margin-top: 0;
     margin-bottom: 0.1em;
+}
+
+.playlistSelect {
+    margin-top: 6px;
+    min-height: 80px;
+    background-color: hsl(0, 0%, 14%);
+    color: hsl(180, 1%, 90%);
+    border: 1px solid hsl(0, 0%, 24%);
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.playlistList {
+    margin-top: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid hsl(0, 0%, 24%);
+    border-radius: 8px;
+    background-color: hsl(0, 0%, 14%);
+}
+
+.playlistOption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: hsl(180, 1%, 90%);
+}
+
+.pickerToggle {
+    margin-top: 6px;
+    width: fit-content;
+    padding: 6px 10px;
+    border: 1px solid hsl(0, 0%, 30%);
+    border-radius: 8px;
+    background-color: hsl(0, 0%, 16%);
+    color: hsl(180, 1%, 90%);
+    cursor: pointer;
+}
+
+.applyButton {
+    margin-top: 8px;
+    width: fit-content;
+    padding: 6px 10px;
+    border: 1px solid hsl(0, 0%, 30%);
+    border-radius: 8px;
+    background-color: hsl(0, 0%, 16%);
+    color: hsl(180, 1%, 90%);
+    cursor: pointer;
+}
+
+.applyButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.errorText {
+    color: hsl(0, 75%, 68%);
+}
+
+.successText {
+    color: hsl(120, 60%, 65%);
 }

@@ -2,8 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .services.fetch_playlists import fetch_all_playlists, fetch_all_songs, fetch_liked_songs
+from .services.fetch_playlists import (
+    fetch_all_playlists,
+    fetch_all_songs,
+    fetch_liked_songs,
+    fetch_writable_playlists,
+)
 from .services.detect_duplicates import detect_duplicates, detect_unadded_songs
+from .services.add_songs import add_songs_to_playlist, add_song_assignments
 from spotify.views import SpotifyAuthAPIView
 from spotify.services.auth import SpotifyAPIError
 
@@ -14,7 +20,7 @@ class FetchPlaylistsView(SpotifyAuthAPIView):
             return error_response
 
         try:
-            clean_playlists = fetch_all_playlists(access_token)
+            clean_playlists = fetch_writable_playlists(access_token)
         except SpotifyAPIError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
@@ -71,3 +77,56 @@ class UnaddedSongsView(SpotifyAuthAPIView):
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
         return Response(unadded_songs, status=status.HTTP_200_OK)
+
+
+class AddUnaddedSongsToPlaylistView(SpotifyAuthAPIView):
+    def post(self, request):
+        access_token, error_response = self.get_access_token(request)
+        if error_response:
+            return error_response
+
+        playlist_id = request.data.get("playlist_id")
+        songs = request.data.get("songs")
+
+        if not playlist_id:
+            return Response(
+                {"detail": "playlist_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(songs, list):
+            return Response(
+                {"detail": "songs must be an array"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        song_ids = [song.get("id") for song in songs if isinstance(song, dict)]
+
+        try:
+            result = add_songs_to_playlist(access_token, playlist_id, song_ids)
+        except SpotifyAPIError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class AddSelectedSongsToPlaylistsView(SpotifyAuthAPIView):
+    def post(self, request):
+        access_token, error_response = self.get_access_token(request)
+        if error_response:
+            return error_response
+
+        assignments = request.data.get("assignments")
+
+        if not isinstance(assignments, list):
+            return Response(
+                {"detail": "assignments must be an array"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = add_song_assignments(access_token, assignments)
+        except SpotifyAPIError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(result, status=status.HTTP_200_OK)
