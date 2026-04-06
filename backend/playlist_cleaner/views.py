@@ -10,6 +10,10 @@ from .services.fetch_playlists import (
 )
 from .services.detect_duplicates import detect_duplicates, detect_unadded_songs
 from .services.add_songs import add_songs_to_playlist, add_song_assignments
+from .services.library_manager import (
+    fetch_saved_songs_with_playlists,
+    update_saved_song_playlists,
+)
 from spotify.views import SpotifyAuthAPIView
 from spotify.services.auth import SpotifyAPIError
 
@@ -126,6 +130,61 @@ class AddSelectedSongsToPlaylistsView(SpotifyAuthAPIView):
 
         try:
             result = add_song_assignments(access_token, assignments)
+        except SpotifyAPIError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class LibraryManagerSongsView(SpotifyAuthAPIView):
+    def get(self, request):
+        access_token, error_response = self.get_access_token(request)
+        if error_response:
+            return error_response
+
+        try:
+            saved_songs = fetch_saved_songs_with_playlists(access_token)
+        except SpotifyAPIError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(saved_songs, status=status.HTTP_200_OK)
+
+
+class UpdateSavedSongPlaylistsView(SpotifyAuthAPIView):
+    def post(self, request):
+        access_token, error_response = self.get_access_token(request)
+        if error_response:
+            return error_response
+
+        song_id = request.data.get("song_id")
+        target_playlist_ids = request.data.get("target_playlist_ids")
+        current_playlist_ids = request.data.get("current_playlist_ids")
+
+        if not song_id:
+            return Response(
+                {"detail": "song_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(target_playlist_ids, list):
+            return Response(
+                {"detail": "target_playlist_ids must be an array"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(current_playlist_ids, list):
+            return Response(
+                {"detail": "current_playlist_ids must be an array"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = update_saved_song_playlists(
+                access_token,
+                song_id,
+                target_playlist_ids,
+                current_playlist_ids,
+            )
         except SpotifyAPIError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 

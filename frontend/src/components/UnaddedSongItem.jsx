@@ -1,5 +1,5 @@
 import styles from "./UnaddedSongItem.module.css"
-import { memo, useCallback, useMemo, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useState } from "react"
 
 function SongItem({
     song,
@@ -8,13 +8,25 @@ function SongItem({
     applying,
     applyError,
     applySuccess,
+    defaultSelectedPlaylistIds = [],
+    pickerLabel = "Assign playlists",
+    applyButtonLabel = "Apply this song",
 }) {
     const title = song?.name ?? song?.title ?? "Unknown song"
     const artists = Array.isArray(song?.artists)
         ? song.artists.map((artist) => artist?.name ?? artist).join(", ")
         : song?.artist ?? "Unknown artist"
     const imageSource = song?.album?.images?.[1]?.url
-    const [selectedPlaylistIds, setSelectedPlaylistIds] = useState([])
+    const normalizedDefaultSelectedPlaylistIds = useMemo(
+        () => (Array.isArray(defaultSelectedPlaylistIds) ? defaultSelectedPlaylistIds : []),
+        [defaultSelectedPlaylistIds],
+    )
+    const defaultSelectionKey = useMemo(
+        () => [...normalizedDefaultSelectedPlaylistIds].sort().join("|"),
+        [normalizedDefaultSelectedPlaylistIds],
+    )
+
+    const [selectedPlaylistIds, setSelectedPlaylistIds] = useState(normalizedDefaultSelectedPlaylistIds)
     const [isPickerOpen, setIsPickerOpen] = useState(false)
     const selectedPlaylistSet = useMemo(
         () => new Set(Array.isArray(selectedPlaylistIds) ? selectedPlaylistIds : []),
@@ -30,6 +42,10 @@ function SongItem({
         setSelectedPlaylistIds(nextPlaylistIds)
     }, [selectedPlaylistIds])
 
+    useEffect(() => {
+        setSelectedPlaylistIds(normalizedDefaultSelectedPlaylistIds)
+    }, [song?.id, defaultSelectionKey])
+
     return (
         <div className={styles.songContainer}>
             <img className={styles.songImage} src={imageSource} alt={title} />
@@ -38,7 +54,7 @@ function SongItem({
                 <small className={styles.songArtists}>{artists}</small>
 
                 <label className={styles.playlistLabel}>
-                    Assign playlists (0, 1, or many)
+                    {pickerLabel}
                 </label>
 
                 <button
@@ -68,7 +84,7 @@ function SongItem({
                     onClick={() => onApplySong?.(song?.id, selectedPlaylistIds)}
                     disabled={applying}
                 >
-                    {applying ? "Applying..." : "Apply this song"}
+                    {applying ? "Applying..." : applyButtonLabel}
                 </button>
 
                 {applyError ? <small className={styles.errorText}>{applyError}</small> : null}

@@ -1,10 +1,12 @@
 import useMe from "@/hooks/useMe"
 import useUnaddedSongs from "@/hooks/useUnaddedSongs"
+import useLibraryManagerSongs from "@/hooks/useLibraryManagerSongs"
 import SongItem from "@/components/UnaddedSongItem"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   getCleanedPlaylists,
   addSelectedSongsToPlaylists,
+  updateLibraryManagerSong,
 } from "@/api/playlistCleaner"
 
 function Home() {
@@ -15,14 +17,29 @@ function Home() {
     error: unaddedError,
     fetchUnadded,
   } = useUnaddedSongs()
-  const songs = useMemo(
+  const {
+    librarySongs,
+    loading: libraryLoading,
+    error: libraryError,
+    fetchLibrarySongs,
+    setLibrarySongs,
+  } = useLibraryManagerSongs()
+
+  const unaddedSongs = useMemo(
     () => (Array.isArray(unadded?.songs) ? unadded.songs : []),
     [unadded],
   )
+  const managerSongs = useMemo(
+    () => (Array.isArray(librarySongs?.songs) ? librarySongs.songs : []),
+    [librarySongs],
+  )
+
   const [playlists, setPlaylists] = useState([])
   const [songSubmitState, setSongSubmitState] = useState({})
+  const [activeView, setActiveView] = useState("unadded")
   const [visibleCount, setVisibleCount] = useState(25)
-  const visibleSongs = useMemo(() => songs.slice(0, visibleCount), [songs, visibleCount])
+  const activeSongs = activeView === "library" ? managerSongs : unaddedSongs
+  const visibleSongs = useMemo(() => activeSongs.slice(0, visibleCount), [activeSongs, visibleCount])
 
   useEffect(() => {
     async function loadPlaylists() {
@@ -40,7 +57,8 @@ function Home() {
 
   useEffect(() => {
     setVisibleCount(25)
-  }, [songs])
+    setSongSubmitState({})
+  }, [activeView, activeSongs])
 
   const handleApplySong = useCallback(async (songId, selectedPlaylistIds) => {
     if (!songId) {
@@ -111,6 +129,95 @@ function Home() {
     }
   }, [])
 
+  const handleOpenLibraryManager = useCallback(async () => {
+    setActiveView("library")
+    if (!librarySongs) {
+      await fetchLibrarySongs()
+    }
+  }, [fetchLibrarySongs, librarySongs])
+
+  const handleFetchUnadded = useCallback(async () => {
+    if (activeView !== "unadded") {
+      setActiveView("unadded")
+      if (!unadded) {
+        await fetchUnadded()
+      }
+      return
+    }
+
+    setActiveView("unadded")
+    await fetchUnadded()
+  }, [activeView, fetchUnadded, unadded])
+
+  const handleApplyLibrarySong = useCallback(async (songId, selectedPlaylistIds) => {
+    if (!songId) {
+      return
+    }
+
+    const selected = Array.isArray(selectedPlaylistIds) ? selectedPlaylistIds : []
+    const targetSong = managerSongs.find((song) => song.id === songId)
+    const currentPlaylistIds = Array.isArray(targetSong?.playlists)
+      ? targetSong.playlists.map((playlist) => playlist.id)
+      : []
+
+    setSongSubmitState((previous) => ({
+      ...previous,
+      [songId]: {
+        loading: true,
+        error: null,
+        success: null,
+      },
+    }))
+
+    try {
+      const result = await updateLibraryManagerSong(songId, selected, currentPlaylistIds)
+      const addedCount = Array.isArray(result?.added_to) ? result.added_to.length : 0
+      const removedCount = Array.isArray(result?.removed_from) ? result.removed_from.length : 0
+
+      setLibrarySongs((previous) => {
+        if (!previous || !Array.isArray(previous.songs)) {
+          return previous
+        }
+
+        const selectedPlaylistSet = new Set(selected)
+        const nextSongs = previous.songs.map((song) => {
+          if (song.id !== songId) {
+            return song
+          }
+
+          const nextPlaylists = playlists.filter((playlist) => selectedPlaylistSet.has(playlist.id))
+          return {
+            ...song,
+            playlists: nextPlaylists,
+          }
+        })
+
+        return {
+          ...previous,
+          songs: nextSongs,
+        }
+      })
+
+      setSongSubmitState((previous) => ({
+        ...previous,
+        [songId]: {
+          loading: false,
+          error: null,
+          success: `Updated song: +${addedCount} playlists, -${removedCount} playlists.`,
+        },
+      }))
+    } catch (err) {
+      setSongSubmitState((previous) => ({
+        ...previous,
+        [songId]: {
+          loading: false,
+          error: err?.response?.data?.detail ?? err.message,
+          success: null,
+        },
+      }))
+    }
+  }, [managerSongs, playlists, setLibrarySongs])
+
   if (loading) return <p>Loading...</p>
 
   if (error) {
@@ -121,37 +228,70 @@ function Home() {
     <div>
       <h1>Hello {user?.display_name ?? "there"}</h1>
 
-      <button onClick={fetchUnadded} disabled={unaddedLoading}>
-        {unaddedLoading ? "Loading..." : "Unadded endpoint"}
+      <button onClick={handleFetchUnadded} disabled={unaddedLoading}>
+        {unaddedLoading
+          ? "Loading..."
+          : activeView === "unadded"
+            ? "Refresh unadded songs"
+            : "Open unadded songs"}
       </button>
 
-      {unaddedError ? (
+      <button onClick={handleOpenLibraryManager} disabled={libraryLoading}>
+        {libraryLoading ? "Loading..." : "Open library manager"}
+      </button>
+
+      {activeView === "unadded" && unaddedError ? (
         <p>
           Failed to load unadded songs:
           {" "}
           {unaddedError?.response?.data?.detail ?? unaddedError.message}
         </p>
       ) : null}
+      {activeView === "library" && libraryError ? (
+        <p>
+          Failed to load library manager songs:
+          {" "}
+          {libraryError?.response?.data?.detail ?? libraryError.message}
+        </p>
+      ) : null}
+
       {visibleSongs.map((song) => (
         <SongItem
           key={song.id ?? song.uri ?? song.name}
           song={song}
           playlists={playlists}
-          onApplySong={handleApplySong}
+          onApplySong={activeView === "library" ? handleApplyLibrarySong : handleApplySong}
           applying={Boolean(songSubmitState[song.id]?.loading)}
           applyError={songSubmitState[song.id]?.error ?? null}
           applySuccess={songSubmitState[song.id]?.success ?? null}
+          defaultSelectedPlaylistIds={
+            activeView === "library"
+              ? (Array.isArray(song?.playlists) ? song.playlists.map((playlist) => playlist.id) : [])
+              : []
+          }
+          pickerLabel={
+            activeView === "library"
+              ? "Manage playlists for this saved song"
+              : "Assign playlists (0, 1, or many)"
+          }
+          applyButtonLabel={
+            activeView === "library" ? "Save playlist changes" : "Apply this song"
+          }
         />
       ))}
 
-      {songs.length > visibleCount ? (
+      {activeSongs.length > visibleCount ? (
         <button onClick={() => setVisibleCount((previous) => previous + 25)}>
           Load 25 more songs
         </button>
       ) : null}
 
-      {unadded && !unaddedLoading && songs.length === 0 ? (
+      {activeView === "unadded" && unadded && !unaddedLoading && unaddedSongs.length === 0 ? (
         <p>No unadded songs found.</p>
+      ) : null}
+
+      {activeView === "library" && librarySongs && !libraryLoading && managerSongs.length === 0 ? (
+        <p>No saved songs found.</p>
       ) : null}
     </div>
   )

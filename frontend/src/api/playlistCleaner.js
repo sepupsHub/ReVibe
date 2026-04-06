@@ -24,3 +24,17 @@ export async function addSelectedSongsToPlaylists(assignments) {
   })
   return response.data
 }
+
+export async function getLibraryManagerSongs() {
+  const response = await api.get("/playlist_cleaner/library_manager_songs/")
+  return response.data
+}
+
+export async function updateLibraryManagerSong(songId, targetPlaylistIds, currentPlaylistIds) {
+  const response = await api.post("/playlist_cleaner/library_manager_update_song/", {
+    song_id: songId,
+    target_playlist_ids: targetPlaylistIds,
+    current_playlist_ids: currentPlaylistIds,
+  })
+  return response.data
+}

@@ -7,6 +7,8 @@ from .views import (
     UnaddedSongsView,
     AddUnaddedSongsToPlaylistView,
     AddSelectedSongsToPlaylistsView,
+    LibraryManagerSongsView,
+    UpdateSavedSongPlaylistsView,
 )
 
 urlpatterns = [
@@ -17,4 +19,6 @@ urlpatterns = [
     path("unadded_songs/", UnaddedSongsView.as_view()),
     path("add_unadded_to_playlist/", AddUnaddedSongsToPlaylistView.as_view()),
     path("add_selected_to_playlists/", AddSelectedSongsToPlaylistsView.as_view()),
+    path("library_manager_songs/", LibraryManagerSongsView.as_view()),
+    path("library_manager_update_song/", UpdateSavedSongPlaylistsView.as_view()),
 ]

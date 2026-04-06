@@ -34,3 +34,21 @@ def spotify_post(access_token, endpoint, payload=None):
     if response.content:
         return response.json()
     return {}
+
+
+def spotify_delete(access_token, endpoint, payload=None):
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    response = requests.delete(
+        f"{SPOTIFY_API_BASE_URL}{endpoint}",
+        headers=headers,
+        json=payload,
+    )
+
+    response.raise_for_status()
+    if response.content:
+        return response.json()
+    return {}
