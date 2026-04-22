@@ -266,10 +266,15 @@ function Home() {
       </button>
 
       {activeSongs.length > 0 ? (
-        <SongFilter
-          value={searchText}
-          onChange={setSearchText}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <SongFilter
+            value={searchText}
+            onChange={setSearchText}
+          />
+          <small>
+            {visibleSongs.length}/{filteredSongs.length}
+          </small>
+        </div>
       ) : null}
 
       {activeView === "unadded" && unaddedError ? (
