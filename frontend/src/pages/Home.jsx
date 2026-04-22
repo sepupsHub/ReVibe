@@ -2,6 +2,7 @@ import useMe from "@/hooks/useMe"
 import useUnaddedSongs from "@/hooks/useUnaddedSongs"
 import useLibraryManagerSongs from "@/hooks/useLibraryManagerSongs"
 import SongItem from "@/components/UnaddedSongItem"
+import SongFilter from "@/components/SongFilter"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   getCleanedPlaylists,
@@ -37,9 +38,33 @@ function Home() {
   const [playlists, setPlaylists] = useState([])
   const [songSubmitState, setSongSubmitState] = useState({})
   const [activeView, setActiveView] = useState("unadded")
+  const [searchText, setSearchText] = useState("")
   const [visibleCount, setVisibleCount] = useState(25)
   const activeSongs = activeView === "library" ? managerSongs : unaddedSongs
-  const visibleSongs = useMemo(() => activeSongs.slice(0, visibleCount), [activeSongs, visibleCount])
+  const normalizedSearchText = searchText.trim().toLowerCase()
+
+  const filteredSongs = useMemo(() => {
+    if (!normalizedSearchText) {
+      return activeSongs
+    }
+
+    return activeSongs.filter((song) => {
+      const title = (song?.name ?? song?.title ?? "").toLowerCase()
+      const artists = Array.isArray(song?.artists)
+        ? song.artists
+          .map((artist) => (typeof artist === "string" ? artist : artist?.name ?? ""))
+          .join(" ")
+          .toLowerCase()
+        : (song?.artist ?? "").toLowerCase()
+
+      return title.includes(normalizedSearchText) || artists.includes(normalizedSearchText)
+    })
+  }, [activeSongs, normalizedSearchText])
+
+  const visibleSongs = useMemo(
+    () => filteredSongs.slice(0, visibleCount),
+    [filteredSongs, visibleCount],
+  )
 
   useEffect(() => {
     async function loadPlaylists() {
@@ -58,7 +83,7 @@ function Home() {
   useEffect(() => {
     setVisibleCount(25)
     setSongSubmitState({})
-  }, [activeView, activeSongs])
+  }, [activeView, activeSongs, normalizedSearchText])
 
   const handleApplySong = useCallback(async (songId, selectedPlaylistIds) => {
     if (!songId) {
@@ -240,6 +265,13 @@ function Home() {
         {libraryLoading ? "Loading..." : "Open library manager"}
       </button>
 
+      {activeSongs.length > 0 ? (
+        <SongFilter
+          value={searchText}
+          onChange={setSearchText}
+        />
+      ) : null}
+
       {activeView === "unadded" && unaddedError ? (
         <p>
           Failed to load unadded songs:
@@ -280,7 +312,7 @@ function Home() {
         />
       ))}
 
-      {activeSongs.length > visibleCount ? (
+      {filteredSongs.length > visibleCount ? (
         <button onClick={() => setVisibleCount((previous) => previous + 25)}>
           Load 25 more songs
         </button>
@@ -290,8 +322,16 @@ function Home() {
         <p>No unadded songs found.</p>
       ) : null}
 
+      {activeView === "unadded" && unaddedSongs.length > 0 && filteredSongs.length === 0 ? (
+        <p>No songs match your filter.</p>
+      ) : null}
+
       {activeView === "library" && librarySongs && !libraryLoading && managerSongs.length === 0 ? (
         <p>No saved songs found.</p>
+      ) : null}
+
+      {activeView === "library" && managerSongs.length > 0 && filteredSongs.length === 0 ? (
+        <p>No songs match your filter.</p>
       ) : null}
     </div>
   )
