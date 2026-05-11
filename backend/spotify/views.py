@@ -77,3 +77,9 @@ class SpotifyMeView(SpotifyAuthAPIView):
                     }
 
         return Response(clean_profile, status=status.HTTP_200_OK)
+
+
+class SpotifyLogoutView(APIView):
+    def get(self, request):
+        request.session.flush()
+        return Response({"detail": "Logged out."}, status=status.HTTP_200_OK)
