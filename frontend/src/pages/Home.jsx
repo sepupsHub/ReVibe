@@ -3,6 +3,7 @@ import useUnaddedSongs from "@/hooks/useUnaddedSongs"
 import useLibraryManagerSongs from "@/hooks/useLibraryManagerSongs"
 import SongItem from "@/components/UnaddedSongItem"
 import SongFilter from "@/components/SongFilter"
+import LogoutButton from "@/components/LogoutButton"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   getCleanedPlaylists,
@@ -251,7 +252,10 @@ function Home() {
 
   return (
     <div>
-      <h1>Hello {user?.display_name ?? "there"}</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <h1>Hello {user?.display_name ?? "there"}</h1>
+        <LogoutButton />
+      </div>
 
       <button onClick={handleFetchUnadded} disabled={unaddedLoading}>
         {unaddedLoading
