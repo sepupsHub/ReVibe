@@ -251,7 +251,7 @@ function Home() {
   }
 
   return (
-    <div>
+    <div className="page-shell">
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <h1>Hello {user?.display_name ?? "there"}</h1>
         <LogoutButton />

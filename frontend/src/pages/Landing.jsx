@@ -2,7 +2,7 @@ import LoginButton from "@/components/LoginButton";
 
 function Landing() {
     return (
-        <main>
+        <main className="page-shell">
             <h1>ReVibe</h1>
             <p>
                 A simple way to clean up your Spotify playlists and keep track of songs that still need to be added.
